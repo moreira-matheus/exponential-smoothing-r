@@ -304,8 +304,8 @@ plot(fit_ses)
 
 $$
 \begin{cases}
-\text{(Forecast eq.)} & \quad \hat y_{t+h|t} = \mathcal{l}_t \\
-\text{(Level eq.)} & \quad \mathcal{l}_t = \alpha y_t + (1-\alpha) \mathcal{l}_{t-1}
+\text{(Forecast eq.)} & \quad \hat y_{t+h|t} = l_t \\
+\text{(Level eq.)} & \quad l_t = \alpha y_t + (1-\alpha) l_{t-1}
 \end{cases}
 $$
 
@@ -346,8 +346,8 @@ The inclusion of the trend component in the model produces a forecast that takes
 
 $$
 \begin{cases}
-\text{(Forecast eq.)} & \quad \hat y_{t+h|t} = \mathcal{l}_t + h b_t\\
-\text{(Level eq.)} & \quad \mathcal{l}_t = \alpha y_t + (1-\alpha) (\mathcal{l}_{t-1} + b_{t-1}) \\
+\text{(Forecast eq.)} & \quad \hat y_{t+h|t} = l_t + h b_t\\
+\text{(Level eq.)} & \quad l_t = \alpha y_t + (1-\alpha) (l_{t-1} + b_{t-1}) \\
 \text{(Trend eq.)} & \quad b_t = \beta (l_t - l_{t-1}) + (1 - \beta) b_{t-1}
 \end{cases}
 $$
@@ -387,8 +387,8 @@ plot(fit_hw)
 
 $$
 \begin{cases}
-\text{(Forecast eq.)} & \quad \hat y_{t+h|t} = \mathcal{l}_t + h b_t + s_{t+h -m (k+1)} \\
-\text{(Level eq.)} & \quad \mathcal{l}_t = \alpha (y_t - s_{t-m}) + (1-\alpha) (\mathcal{l}_{t-1} + b_{t-1}) \\
+\text{(Forecast eq.)} & \quad \hat y_{t+h|t} = l_t + h b_t + s_{t+h -m (k+1)} \\
+\text{(Level eq.)} & \quad l_t = \alpha (y_t - s_{t-m}) + (1-\alpha) (l_{t-1} + b_{t-1}) \\
 \text{(Trend eq.)} & \quad b_t = \beta (l_t - l_{t-1}) + (1 - \beta) b_{t-1} \\
 \text{(Seasonality eq.)} & \quad s_t = \gamma (y_t - l_{t-1} - b_{t-1}) + (1-\gamma) s_{t-m}
 \end{cases}
