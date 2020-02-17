@@ -221,3 +221,213 @@ legend(x = 1, y = 0.90,
 In conclusion, time series decomposition allows you to understand your time series data at a deeper level. For instance, you can quickly identify the underlying trend and take it as the “growth rate” of the organic traffic or you can de-seasonalize data points to identify whether traffic really went down in a given month or whether it was due to seasonality only.
 
 ***
+
+# 2. Exponential smoothing for time series forecasts
+
+Exponential smoothing is a popular forecasting method for short-term predictions.
+
+- Such forecasts of future values are based on past data whereby the most recent observations are weighted more than less recent observations.
+  - As part of this weighting, constants are being smoothed. This is different from the simple moving average method, in which every data point has equal weight in the average calculation.
+
+- Exponential smoothing introduces the idea of building a forecasted value as the average figure from differently weighted data points for the average calculation.
+
+There are different exponential smoothing methods that differ from each other in the components of the time series that are modeled.
+
+- For instance, simple exponential smoothing (SES) uses only one smoothing constant, double exponential smoothing or Holt exponential smoothing uses two smoothing constants and triple exponential smoothing or Holt-Winters exponential smoothing accordingly uses three smoothing constants.
+
+## 2.1 Simple exponential smoothing
+
+Simple exponential smoothing assumes that the time series data has <u>only a level and some error (or remainder) but no trend or seasonality</u>.
+
+It is therefore not applicable to the “Organic_Traffic” data as that data has underlying seasonality and trend.
+
+- Nevertheless, for illustration purposes, we will apply simple exponential smoothing to our organic traffic data in this section purely to explore its mechanics.
+
+For exponential smoothing, all past observations are part of the calculation for the forecasted value.
+
+- The smoothing parameter $\alpha$ determines the distribution of weights of past observations and with that how heavily a given time period is factored into the forecasted value.
+
+- If the smoothing parameter is close to $1$, recent observations carry more weight and if the smoothing parameter is closer to 0, weights of older and recent observations are more balanced.
+  - For example, in the case of $\alpha = 0.5$, the weight halves with every next older observation: $0.5$, $0.25$, $0.125$, $0.0625$, etc.
+
+- As you can see in the following image, the forecasted value of the next period in the future is the sum of the respective products of Weight and past Organic Sessions for every previous time period.
+
+<center><img src="./IMG/simple-exponential-smoothing.PNG" width=600 alt="Simple exponential smoothing."></center>
+
+Here is also the mathematical notation for columns D and E respectively:
+
+$$
+\text{Weight}_t = \alpha \cdot (1 - \alpha)^t \\
+\text{Forecast} = \displaystyle\sum_{t = 0}^{n} \Big(\text{Organic sessions}_t \cdot \text{Weight}_t\Big)
+$$
+
+In this case, our freely chosen smoothing parameter $\alpha = 0.5$ yields a forecast of $591,069$ Organic Sessions for the next future period.
+
+If we fit a simple exponential smoothing model to the “Organic_Traffic” data in R, then the smoothing parameter $\alpha$ is automatically determined by optimizing for minimum forecasting error.
+
+- The following R code fits a simple exponential smoothing model to the “Organic_Traffic” data and prints a summary including the calculated smoothing parameter $\alpha$ and forecasting error measures.
+- Note that instead of the `ses(Organic_Traffic)` function, you can also use `ets(Organic_Traffic, model = "ANN")` from the `forecast` package but in this section we go with the simpler `ses` function.
+
+```{r warning=FALSE,message=FALSE}
+#Install and load forecast package if not installed
+if(!require(forecast)) {
+  install.packages("forecast", dependencies = T, repos = "http://cran.us.r-project.org")
+  library(forecast) }
+
+#Fit simple exponential smoothing model to data and show summary
+fit_ses <- ses(Organic_Traffic)
+summary(fit_ses)
+```
+
+> More on the `ses()` function [here](https://www.rdocumentation.org/packages/forecast/versions/8.10/topics/ses).
+
+You can see in this output under Smoothing parameters that $\alpha = 0.6347$.
+
+- This means that $63.47\%$ of the forecast are based on the most recent observation.
+
+Below that various Error measures - that will be discussed later - are shown and the summary ends with Forecasts.
+
+Since simple exponential smoothing assumes there is no trend or seasonality the forecasts for future time periods is at a certain level but flat in its development over time.
+
+- `Lo 80` and `Hi 80` are the boundaries of an $80\%$ confidence interval and accordingly, the wider bounds of `Lo 95` and `Hi 95` represent the $95\%$ confidence interval (the higher the confidence, the wider the bounds).
+
+- Also, note that with increasing distance into the future the confidence intervals widen.
+
+The plot function produces the `plot` below which represents the forecasted level for future time periods and visualizes the $80\%$ and $95\%$ confidence intervals.
+
+```{r fig.align="center"}
+#Plot the forecasted values
+plot(fit_ses)
+```
+
+**Component form**: 
+
+$$
+\begin{cases}
+\text{(Forecast eq.)} & \quad \hat y_{t+h|t} = \mathcal{l}_t \\
+\text{(Level eq.)} & \quad \mathcal{l}_t = \alpha y_t + (1-\alpha) \mathcal{l}_{t-1}
+\end{cases}
+$$
+
+- Source [here](https://otexts.com/fpp2/ses.html).
+
+## 2.2 Holt exponential smoothing
+
+Holt exponential smoothing is a time series forecasting approach that <u>fits time series data with an overall level as well as a trend</u>.
+
+- Additionally to simple exponential smoothing, which uses smoothing parameter $\alpha$ only there is also a $\beta$ smoothing parameter for the exponential decay of the modeled trend component. 
+  - This $\beta$ smoothing parameter ranges between $0$ and $1$, with higher values indicating more weight to recent observations.
+  - A $\beta$ value of $0.5$ means that the most recent observation’s trend component is weighted with $50\%$ in the modeled trend slope.
+
+- The mechanics of the $\beta$ smoothing parameter are the same as described for the $\alpha$ smoothing parameter previously. The difference is that they refer to different time series components, e.g. trend and level, respectively.
+
+```{r}
+#Fit Holt exponential smoothing model to data and show summary
+fit_holt <- holt(Organic_Traffic)
+summary(fit_holt)
+```
+
+> More on the `holt()` function [here](https://www.rdocumentation.org/packages/forecast/versions/8.10/topics/ses).
+
+The output of the `summary` function will this time detect values for both the $\alpha$ and $\beta$ smoothing parameters by optimizing for minimum forecasting error.
+
+- The forecasted values take trend into account and hence, you can see the increase in the values over time.
+
+The `plot` function produces the plot below based on the forecasted values and the confidence intervals.
+
+```{r fig.align="center"}
+#Plot the forecasted values
+plot(fit_holt)
+```
+
+The inclusion of the trend component in the model produces a forecast that takes the uptrend of the “Organic_Traffic” data accordingly into account. However, the seasonal fluctuations in the data are not part of the model.
+
+**Component form**: 
+
+$$
+\begin{cases}
+\text{(Forecast eq.)} & \quad \hat y_{t+h|t} = \mathcal{l}_t + h b_t\\
+\text{(Level eq.)} & \quad \mathcal{l}_t = \alpha y_t + (1-\alpha) (\mathcal{l}_{t-1} + b_{t-1}) \\
+\text{(Trend eq.)} & \quad b_t = \beta (l_t - l_{t-1}) + (1 - \beta) b_{t-1}
+\end{cases}
+$$
+
+- Source [here](https://otexts.com/fpp2/holt.html).
+
+## 2.3 Holt-Winters exponential smoothing
+
+Holt-Winters exponential smoothing is a time series forecasting approach that <u>takes the overall level, trend and seasonality of the underlying dataset into account for its forecast</u>.
+
+- Hence, the Holt-Winters model has three smoothing parameters indicating the exponential decay from most recent to older observations: $\alpha$ for the level component, $\beta$ for the trend component, and $\gamma$ for the seasonality component.
+
+The following R code fits the Holt-Winters model to the time series data.
+
+- The argument `h = 10` sets the forecasted time periods to $10$ (its default is $24$), while the default for the previously used functions ses and holt is $10$.
+
+- Also, the argument `seasonal = "multiplicative"` indicates that the seasonal component in the data increases in proportion to the level.
+
+```{r}
+#Fit Holt-Winters exponential smoothing model to data and show summary
+fit_hw <- hw(Organic_Traffic, h = 10, seasonal = "multiplicative")
+summary(fit_hw)
+```
+
+> More on the `hw()` function [here](https://www.rdocumentation.org/packages/forecast/versions/8.10/topics/ses).
+
+The `summary` function shows the estimates for $\alpha$, $\beta$, and also $\gamma$ for the seasonality component.
+
+The `plot` function visualizes the forecast including seasonality.
+
+```{r fig.align="center"}
+#Plot the forecasted values
+plot(fit_hw)
+```
+
+**Component form**: 
+
+$$
+\begin{cases}
+\text{(Forecast eq.)} & \quad \hat y_{t+h|t} = \mathcal{l}_t + h b_t + s_{t+h -m (k+1)} \\
+\text{(Level eq.)} & \quad \mathcal{l}_t = \alpha (y_t - s_{t-m}) + (1-\alpha) (\mathcal{l}_{t-1} + b_{t-1}) \\
+\text{(Trend eq.)} & \quad b_t = \beta (l_t - l_{t-1}) + (1 - \beta) b_{t-1} \\
+\text{(Seasonality eq.)} & \quad s_t = \gamma (y_t - l_{t-1} - b_{t-1}) + (1-\gamma) s_{t-m}
+\end{cases}
+$$
+
+- Source [here](https://otexts.com/fpp2/holt-winters.html).
+
+## 2.4 Automated exponential smoothing forecasts
+
+The previous three sections introduced simple, Holt and Holt-Winters exponential smoothing. These three exponential smoothing models use different (combinations of) time series components (e.g. level, trend, seasonality) for their respective forecasts.
+
+- <u>There is also an automated exponential smoothing forecast that can be accomplished with the `ets()` function from the `forecast` package</u>.
+
+  - In this case, it is automatically determined whether a time series component is additive or multiplicative.
+  - The initial state variable and smoothing parameters [...] are optimized to yield the model by default with the least [AICc](https://en.wikipedia.org/wiki/Akaike_information_criterion#AICc) (Akaike information criterion with a correction for small sample sizes) as chosen automated forecast model.
+
+- The previously used functions `ses()`, `holt()` and `hw()` are convenience wrappers to the `ets()` function.
+
+- The `ets()` function takes several arguments, including `model`, which takes three letters as input.
+  - The first letter denotes the error type (`A`, `M` or `Z`), the second letter denotes the trend type (`N`, `A`, `M` or `Z`), and the third letter denotes the seasonality type (`N`, `A`, `M` or `Z`).
+  - The letters stand for `N` = none, `A` = additive, `M` = multiplicative and `Z` = automatically selected.
+  - This means that `ses(Organic_Traffic)` is, for instance, the convenience wrapper to `ets(Organic_Traffic, model = "ANN")`, which fits a model with additive error and without trend or seasonality.
+
+- Also, the `ets()` function can be used with `Z` for all time series components or without the model argument to fit the automated exponential smoothing forecast to the data.
+  - This means `ets(Organic_Traffic)` is the same like `ets(Organic_Traffic, model = "ZZZ")`.
+  - One drawback of the `ets()` function is that no time horizon can be chosen.
+
+```{r}
+#Fit automated exponential smoothing model to data and show summary
+fit_auto <- forecast(Organic_Traffic, h = 10)
+summary(fit_auto)
+```
+
+From the output in the previous image, you can see an AICc value of $1338.090$, which is lower than for all other presented exponential smoothing models.
+
+- Also, the headline of the plot below contains `ETS(M,A,M)` showing that the automated model characterized error of the “Organic_Traffic” data as multiplicative (`M`), trend as additive (`A`) and seasonality as multiplicative (`M`).
+
+```{r fig.align="center"}
+#Plot the forecasted values
+plot(forecast(fit_auto))
+```
+
